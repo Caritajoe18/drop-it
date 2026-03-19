@@ -68,7 +68,7 @@
 | Auth       | JWT (jsonwebtoken), bcrypt                               |
 | Validation | Zod                                                     |
 | Security   | Helmet, CORS, express-rate-limit                        |
-| Monorepo   | npm workspaces                                          |
+| Monorepo   | Single repo, independently deployed apps               |
 
 ---
 
@@ -76,7 +76,7 @@
 
 ```
 drop-it/
-├── package.json              # Root — npm workspaces config
+├── package.json              # Root — convenience scripts
 ├── .gitignore
 ├── .nvmrc                    # Node version
 ├── README.md
@@ -175,8 +175,14 @@ git clone <your-repo-url> drop-it
 cd drop-it
 
 # Install all dependencies (backend + frontend)
-npm install
+npm run install:all
+
+# Or install each app individually
+cd apps/backend && npm install
+cd ../frontend && npm install
 ```
+
+Each app has its own `node_modules` and `package-lock.json` — there are no hoisted workspaces.
 
 ### Environment Variables
 
@@ -219,12 +225,15 @@ In development, the server also auto-syncs models on startup (`sequelize.sync({ 
 ### Running the App
 
 ```bash
-# Start both backend and frontend concurrently
-npm run dev
-
-# Or start individually
+# Start backend (from project root)
 npm run dev:backend   # Express API on http://localhost:5000
+
+# Start frontend (in a separate terminal)
 npm run dev:frontend  # React UI on http://localhost:5173
+
+# Or run directly inside each app folder
+cd apps/backend && npm run dev
+cd apps/frontend && npm run dev
 ```
 
 The frontend proxies `/api` requests to the backend automatically (configured in `vite.config.ts`).
@@ -366,42 +375,77 @@ GET /api/payments/balance   ← authenticated (USDC balance from Hedera)
 
 ## Scripts Reference
 
-Run from the project root:
+### Root-level convenience scripts
 
-| Command               | Description                                |
-| ---------------------- | ------------------------------------------ |
-| `npm run dev`          | Start backend and frontend in dev mode     |
-| `npm run dev:backend`  | Start Express API with hot reload          |
-| `npm run dev:frontend` | Start Vite React dev server                |
-| `npm run build`        | Build both apps for production             |
-| `npm run lint`         | Lint both apps                             |
-| `npm run test`         | Run tests                                  |
-| `npm run db:migrate`   | Run Sequelize migrations                   |
-| `npm run db:migrate:undo` | Revert last migration                   |
-| `npm run db:seed`      | Run database seeders                       |
+| Command                   | Description                                |
+| ------------------------- | ------------------------------------------ |
+| `npm run install:all`     | Install deps in both backend and frontend  |
+| `npm run dev:backend`     | Start Express API with hot reload          |
+| `npm run dev:frontend`    | Start Vite React dev server                |
+| `npm run build:backend`   | Build backend for production               |
+| `npm run build:frontend`  | Build frontend for production              |
+| `npm run lint:backend`    | Lint backend code                          |
+| `npm run lint:frontend`   | Lint frontend code                         |
+| `npm run test:backend`    | Run backend tests                          |
+| `npm run db:migrate`      | Run Sequelize migrations                   |
+| `npm run db:migrate:undo` | Revert last migration                      |
+| `npm run db:seed`         | Run database seeders                       |
+
+### Backend scripts (`apps/backend/`)
+
+| Command            | Description                       |
+| ------------------ | --------------------------------- |
+| `npm run dev`      | Start with hot reload             |
+| `npm run build`    | Compile TypeScript to `dist/`     |
+| `npm start`        | Run compiled `dist/server.js`     |
+| `npm run lint`     | Lint source files                 |
+| `npm test`         | Run tests                         |
+| `npm run db:migrate` | Run Sequelize migrations        |
+
+### Frontend scripts (`apps/frontend/`)
+
+| Command            | Description                       |
+| ------------------ | --------------------------------- |
+| `npm run dev`      | Start Vite dev server             |
+| `npm run build`    | Type-check + Vite production build|
+| `npm run preview`  | Preview production build locally  |
+| `npm run lint`     | Lint source files                 |
 
 ---
 
 ## Deployment
 
+Backend and frontend are **deployed independently**. They share this repository but have separate dependency trees and build pipelines.
+
 ### Backend
 
-1. Build: `npm run build:backend`
-2. Output is in `apps/backend/dist/`
-3. Run: `node apps/backend/dist/server.js`
-4. Set `NODE_ENV=production` and configure all env vars.
-5. Use a process manager like **PM2** for production.
+```bash
+cd apps/backend
+npm install --production
+npm run build
+NODE_ENV=production node dist/server.js
+```
+
+- Output: `apps/backend/dist/`
+- Set all env vars from `.env.example` in your hosting platform.
+- Use a process manager like **PM2** or deploy to **Railway**, **Render**, **Fly.io**, etc.
+- Run `npm run db:migrate` against your production database before starting.
 
 ### Frontend
 
-1. Build: `npm run build:frontend`
-2. Output is in `apps/frontend/dist/`
-3. Serve the static files via **Nginx**, **Vercel**, **Netlify**, or any static host.
-4. Point API requests to your backend URL.
+```bash
+cd apps/frontend
+npm install
+npm run build
+```
+
+- Output: `apps/frontend/dist/` (static files)
+- Deploy to **Vercel**, **Netlify**, **Cloudflare Pages**, or any static host.
+- Set `VITE_API_URL` environment variable to your production backend URL.
 
 ### Database
 
-- Use `npm run db:migrate` to run migrations in production.
+- Use `npx sequelize-cli db:migrate` inside `apps/backend/` to run migrations in production.
 - Do **not** use `sequelize.sync()` in production — rely on migrations only.
 
 ---

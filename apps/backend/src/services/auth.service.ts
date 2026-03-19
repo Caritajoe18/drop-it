@@ -1,8 +1,7 @@
 import jwt from 'jsonwebtoken';
-import { User } from '../models';
 import { env } from '../config/env';
-import { UnauthorizedError, ConflictError, BadRequestError } from '../utils/errors';
-import { logger } from '../utils/logger';
+import { UnauthorizedError } from '../utils/errors';
+import { userService } from './user.service';
 
 interface TokenPayload {
   userId: string;
@@ -27,22 +26,13 @@ class AuthService {
   }
 
   async register(data: { email: string; username: string; password: string; role?: 'worker' | 'requester' }) {
-    const existing = await User.findOne({ where: { email: data.email } });
-    if (existing) throw new ConflictError('Email already registered');
-
-    const user = await User.create({
-      email: data.email,
-      username: data.username,
-      password: data.password,
-      role: data.role || 'worker',
-    });
-
+    const user = await userService.createUser(data);
     const token = this.generateToken(user);
-    return { user: { id: user.id, email: user.email, username: user.username, role: user.role }, token };
+    return { user, token };
   }
 
   async login(email: string, password: string) {
-    const user = await User.scope('withPassword').findOne({ where: { email } });
+    const user = await userService.getUserByEmail(email);
     if (!user || !(await user.comparePassword(password))) {
       throw new UnauthorizedError('Invalid email or password');
     }
@@ -52,6 +42,18 @@ class AuthService {
 
     const token = this.generateToken(user);
     return { user: { id: user.id, email: user.email, username: user.username, role: user.role }, token };
+  }
+
+  async logout(_userId: string) {
+    // With JWT, logout is handled client-side by discarding the token.
+    // Add token blacklisting here if needed (e.g. via Redis).
+    return { message: 'Logged out successfully' };
+  }
+
+  async verifyEmail(_token: string) {
+    // Placeholder for email verification flow.
+    // Implement: decode verification token, mark user email as verified.
+    throw new Error('Email verification not yet implemented');
   }
 }
 

@@ -20,19 +20,18 @@ app.use(
 // ── Rate limiting ──────────────────────────────────
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: 150,
   standardHeaders: true,
   legacyHeaders: false,
   message: { status: 'error', message: 'Too many requests, please try again later.' },
 });
-app.use('/api', limiter);
+app.use('/drop', limiter);
 
-// ── Body parsing ───────────────────────────────────
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// ── Routes ─────────────────────────────────────────
-app.use('/api', routes);
+// ── Routes
+app.use('/drop', routes);
 
 // ── Error handling ─────────────────────────────────
 app.use(errorHandler);
