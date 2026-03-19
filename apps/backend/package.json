@@ -1,5 +1,5 @@
 {
-  "name": "@drop-it/backend",
+  "name": "drop-it-backend",
   "version": "1.0.0",
   "private": true,
   "description": "Drop-It backend API — Express, TypeScript, Sequelize, Hedera USDC payments",

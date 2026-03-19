@@ -24,7 +24,7 @@ export default function CreateTask() {
       });
       navigate('/tasks');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create task');
+      setError(err.data?.message || err.message || 'Failed to create task');
     }
   };
 

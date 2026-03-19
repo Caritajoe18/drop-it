@@ -41,7 +41,7 @@ export default function TaskDetail() {
       setMessage('Submission sent!');
       setSubmission('');
     } catch (err: any) {
-      setMessage(err.response?.data?.message || 'Submission failed');
+      setMessage(err.data?.message || err.message || 'Submission failed');
     }
   };
 
