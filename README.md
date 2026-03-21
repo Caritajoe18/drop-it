@@ -1,4 +1,4 @@
-# Drop-It — Micro Task Platform
+# drops — Micro Task Platform
 
 > A decentralized micro task marketplace where workers complete small tasks and earn **USDC stablecoin** paid on the **Hedera** network.
 
@@ -28,7 +28,7 @@
 
 ## Overview
 
-**Drop-It** connects task **requesters** who need small units of work done (data labelling, surveys, content moderation, writing, etc.) with **workers** who complete them and get paid instantly in USDC on Hedera.
+**drops** connects task **requesters** who need small units of work done (data labelling, surveys, content moderation, writing, etc.) with **workers** who complete them and get paid instantly in USDC on Hedera.
 
 ### Core Flow
 
@@ -75,7 +75,7 @@
 ## Project Structure
 
 ```
-drop-it/
+drops/
 ├── package.json              # Root — convenience scripts
 ├── .gitignore
 ├── .nvmrc                    # Node version
@@ -171,8 +171,8 @@ Optional: a **Hedera testnet account** for live USDC transfers. Create one free 
 
 ```bash
 # Clone the repo
-git clone <your-repo-url> drop-it
-cd drop-it
+git clone <your-repo-url> drops
+cd drops
 
 # Install all dependencies (backend + frontend)
 npm run install:all
@@ -214,7 +214,7 @@ Edit `apps/backend/.env` with your values:
 
 ```bash
 # Create the PostgreSQL database
-createdb dropit_dev
+createdb drops_dev
 
 # Run Sequelize migrations
 npm run db:migrate

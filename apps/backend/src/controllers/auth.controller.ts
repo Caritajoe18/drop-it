@@ -19,4 +19,22 @@ export const authController = {
       next(error);
     }
   },
+
+  async verifyEmail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await authService.verifyEmail(req.query.token as string, req.query.uid as string);
+      res.json({ status: 'success', data: result });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async resendVerification(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await authService.resendVerification(req.body.email);
+      res.json({ status: 'success', data: result });
+    } catch (error) {
+      next(error);
+    }
+  },
 };

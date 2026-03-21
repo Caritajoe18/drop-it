@@ -33,7 +33,7 @@ export default function Tasks() {
         <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
           {tasks.map((task) => (
             <Link key={task.id} to={`/tasks/${task.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div style={{ background: 'var(--color-surface)', padding: '1.2rem', borderRadius: 'var(--radius)', border: '1px solid #334155' }}>
+              <div style={{ background: 'var(--color-surface)', padding: '1.2rem', borderRadius: 'var(--radius)', border: '1px solid var(--color-border)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                 <h3 style={{ marginBottom: '0.5rem' }}>{task.title}</h3>
                 <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>{task.category}</p>
                 <p style={{ color: 'var(--color-success)', fontWeight: 600, marginTop: '0.5rem' }}>

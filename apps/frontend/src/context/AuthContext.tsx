@@ -11,8 +11,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (data: { email: string; username: string; password: string; role?: string }) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
+  register: (data: { email: string; username: string; password: string; role?: string }) => Promise<{ message: string }>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -39,20 +39,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, [token]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     const { data } = await api.post('/auth/login', { email, password });
     const { user: userData, token: newToken } = data.data;
     localStorage.setItem('token', newToken);
     setToken(newToken);
     setUser(userData);
+    return userData;
   };
 
   const register = async (regData: { email: string; username: string; password: string; role?: string }) => {
     const { data } = await api.post('/auth/register', regData);
-    const { user: userData, token: newToken } = data.data;
-    localStorage.setItem('token', newToken);
-    setToken(newToken);
-    setUser(userData);
+    return data.data; // returns { message: '...' } — no auto-login
   };
 
   const logout = () => {

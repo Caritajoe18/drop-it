@@ -55,7 +55,7 @@ class HederaService {
       const transaction = new TransferTransaction()
         .addTokenTransfer(this.usdcTokenId, AccountId.fromString(fromAccountId), -tokenAmount)
         .addTokenTransfer(this.usdcTokenId, AccountId.fromString(toAccountId), tokenAmount)
-        .setTransactionMemo(`Drop-It task payment: ${amount} USDC`)
+        .setTransactionMemo(`drops task payment: ${amount} USDC`)
         .freezeWith(this.client);
 
       const signedTx = await transaction.sign(this.operatorKey);

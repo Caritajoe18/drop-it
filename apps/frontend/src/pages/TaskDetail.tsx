@@ -80,7 +80,7 @@ export default function TaskDetail() {
         <div style={{ marginTop: '2rem' }}>
           <h3 style={{ marginBottom: '1rem' }}>Submissions</h3>
           {task.submissions.map((sub) => (
-            <div key={sub.id} style={{ background: 'var(--color-surface)', padding: '1rem', borderRadius: 'var(--radius)', marginBottom: '0.8rem' }}>
+            <div key={sub.id} style={{ background: 'var(--color-surface)', padding: '1rem', borderRadius: 'var(--radius)', marginBottom: '0.8rem', border: '1px solid var(--color-border)' }}>
               <p><strong>{sub.worker.username}</strong> — <em>{sub.status}</em></p>
               <p style={{ whiteSpace: 'pre-wrap', marginTop: '0.5rem' }}>{sub.content}</p>
               {sub.status === 'pending' && (

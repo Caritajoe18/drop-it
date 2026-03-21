@@ -1,9 +1,10 @@
+import { Transaction } from 'sequelize';
 import { User } from '../models';
 import { ConflictError, NotFoundError } from '../utils/errors';
 
 class UserService {
-  async createUser(data: { email: string; username: string; password: string; role?: 'worker' | 'requester' }) {
-    const existing = await User.findOne({ where: { email: data.email } });
+  async createUser(data: { email: string; username: string; password: string; role?: 'worker' | 'requester' }, transaction?: Transaction) {
+    const existing = await User.findOne({ where: { email: data.email }, transaction });
     if (existing) throw new ConflictError('Email already registered');
 
     const user = await User.create({
@@ -11,7 +12,7 @@ class UserService {
       username: data.username,
       password: data.password,
       role: data.role || 'worker',
-    });
+    }, { transaction });
 
     return { id: user.id, email: user.email, username: user.username, role: user.role };
   }

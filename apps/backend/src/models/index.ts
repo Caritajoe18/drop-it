@@ -2,6 +2,7 @@ import User from './User';
 import Task from './Task';
 import Submission from './Submission';
 import Payment from './Payment';
+import EmailVerification from './EmailVerification';
 
 // ── Associations ────────────────────────────────────
 
@@ -26,4 +27,8 @@ Payment.belongsTo(User, { foreignKey: 'toUserId', as: 'payee' });
 Task.hasMany(Payment, { foreignKey: 'taskId', as: 'payments' });
 Payment.belongsTo(Task, { foreignKey: 'taskId', as: 'task' });
 
-export { User, Task, Submission, Payment };
+// User → EmailVerification
+User.hasMany(EmailVerification, { foreignKey: 'userId', as: 'emailVerifications' });
+EmailVerification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+export { User, Task, Submission, Payment, EmailVerification };

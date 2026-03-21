@@ -11,7 +11,7 @@ export const env = {
   db: {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432', 10),
-    name: process.env.DB_NAME || 'dropit_dev',
+    name: process.env.DB_NAME || 'drops_dev',
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || '',
   },
@@ -27,6 +27,13 @@ export const env = {
     operatorKey: process.env.HEDERA_OPERATOR_KEY || '',
     usdcTokenId: process.env.HEDERA_USDC_TOKEN_ID || '',
   },
+
+  gmail: {
+    user: process.env.GMAIL_USER || '',
+    appPassword: process.env.GMAIL_APP_PASSWORD || '',
+  },
+
+  encryptionKey: process.env.ENCRYPTION_KEY || 'change-me-to-a-random-32-char-key!',
 
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
 } as const;
