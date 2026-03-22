@@ -7,9 +7,9 @@
 }
 
 :root {
-  --color-primary: #5DACD4;
-  --color-primary-dark: #4a9ac4;
-  --color-primary-light: #A7DBF3;
+  --color-primary: #1E90FF;
+  --color-primary-dark: #1278e0;
+  --color-primary-light: #8dc8ff;
   --color-bg: #edf2f5;
   --color-surface: #ffffff;
   --color-text: #1a2b3c;
@@ -55,6 +55,109 @@ button {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1.5rem;
+}
+
+/* ── Header ── */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  background: transparent;
+}
+
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 56px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  padding: 0 1.5rem;
+  box-shadow: 0 2px 16px rgba(30, 144, 255, 0.08);
+}
+
+.site-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* Desktop nav */
+.nav-desktop {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+/* Hamburger – hidden on desktop */
+.hamburger {
+  display: none;
+  background: transparent;
+  border: none;
+  padding: 0.4rem;
+  color: var(--color-text);
+  border-radius: 8px;
+}
+.hamburger:hover {
+  background: var(--color-bg);
+}
+
+/* Mobile dropdown */
+.nav-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  margin: 0.4rem 1rem 0;
+  padding: 0.5rem 1.25rem 1rem;
+  box-shadow: 0 4px 20px rgba(30, 144, 255, 0.10);
+  animation: slideDown 0.18s ease;
+}
+.nav-mobile a,
+.nav-mobile button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 0;
+  font-size: 1rem;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  border-radius: 0;
+}
+.nav-mobile a:last-child,
+.nav-mobile button:last-child {
+  border-bottom: none;
+}
+.nav-mobile .btn-primary {
+  margin-top: 0.5rem;
+  border-radius: var(--radius);
+  text-align: center;
+  color: white;
+  background: var(--color-primary);
+  border-bottom: none;
+  padding: 0.65rem 1.2rem;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .nav-desktop { display: none; }
+  .hamburger   { display: flex; align-items: center; justify-content: center; }
 }
 
 input,

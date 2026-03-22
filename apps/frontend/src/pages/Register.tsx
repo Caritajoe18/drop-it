@@ -54,8 +54,8 @@ export default function Register() {
           </button>
         </div>
         <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-          <option value="worker">Worker — I want to complete tasks</option>
-          <option value="requester">Requester — I want to post tasks</option>
+          <option value="worker">Worker - I want to complete tasks</option>
+          <option value="requester">Requester - I want to post tasks</option>
         </select>
         <button type="submit" className="btn-primary">Create Account</button>
       </form>
