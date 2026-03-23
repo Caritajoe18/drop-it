@@ -11,6 +11,15 @@ export const createTaskSchema = z.object({
   }),
 });
 
+export const fundTaskSchema = z.object({
+  body: z.object({
+    hederaTxId: z.string().min(1, 'Hedera transaction ID is required'),
+  }),
+  params: z.object({
+    taskId: z.string().uuid(),
+  }),
+});
+
 export const submitWorkSchema = z.object({
   body: z.object({
     content: z.string().min(1),
