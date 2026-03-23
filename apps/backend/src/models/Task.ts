@@ -2,6 +2,7 @@ import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
 
 export type TaskStatus = 'open' | 'in_progress' | 'under_review' | 'completed' | 'cancelled';
+export type TaskFundingStatus = 'pending_funding' | 'funded' | 'depleted' | 'refunded';
 
 export interface TaskAttributes {
   id: string;
@@ -12,13 +13,27 @@ export interface TaskAttributes {
   maxSubmissions: number;
   currentSubmissions: number;
   status: TaskStatus;
+  fundingStatus: TaskFundingStatus;
+  escrowAmount: number;
+  escrowTransactionId: string | null;
   deadline: Date | null;
   requesterId: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-type TaskCreationAttributes = Optional<TaskAttributes, 'id' | 'currentSubmissions' | 'status' | 'deadline' | 'createdAt' | 'updatedAt'>;
+type TaskCreationAttributes = Optional<
+  TaskAttributes,
+  | 'id'
+  | 'currentSubmissions'
+  | 'status'
+  | 'fundingStatus'
+  | 'escrowAmount'
+  | 'escrowTransactionId'
+  | 'deadline'
+  | 'createdAt'
+  | 'updatedAt'
+>;
 
 class Task extends Model<TaskAttributes, TaskCreationAttributes> implements TaskAttributes {
   declare id: string;
@@ -29,6 +44,9 @@ class Task extends Model<TaskAttributes, TaskCreationAttributes> implements Task
   declare maxSubmissions: number;
   declare currentSubmissions: number;
   declare status: TaskStatus;
+  declare fundingStatus: TaskFundingStatus;
+  declare escrowAmount: number;
+  declare escrowTransactionId: string | null;
   declare deadline: Date | null;
   declare requesterId: string;
   declare readonly createdAt: Date;
@@ -75,6 +93,22 @@ Task.init(
       allowNull: false,
       defaultValue: 'open',
     },
+    fundingStatus: {
+      type: DataTypes.ENUM('pending_funding', 'funded', 'depleted', 'refunded'),
+      allowNull: false,
+      defaultValue: 'pending_funding',
+    },
+    // Total USDC locked in escrow = rewardAmount × maxSubmissions
+    escrowAmount: {
+      type: DataTypes.DECIMAL(18, 6),
+      allowNull: false,
+      defaultValue: 0,
+    },
+    // Hedera transaction ID for the requester's initial escrow deposit
+    escrowTransactionId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     deadline: {
       type: DataTypes.DATE,
       allowNull: true,
@@ -92,6 +126,7 @@ Task.init(
       { fields: ['status'] },
       { fields: ['category'] },
       { fields: ['requester_id'] },
+      { fields: ['funding_status'] },
     ],
   },
 );

@@ -14,6 +14,7 @@ export const env = {
     name: process.env.DB_NAME || 'drops_dev',
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || '',
+    url: process.env.DATABASE_URL || '',
   },
 
   jwt: {
@@ -26,6 +27,14 @@ export const env = {
     operatorId: process.env.HEDERA_OPERATOR_ID || '',
     operatorKey: process.env.HEDERA_OPERATOR_KEY || '',
     usdcTokenId: process.env.HEDERA_USDC_TOKEN_ID || '',
+  },
+
+  platform: {
+    // The platform operator's Hedera account that holds escrow funds.
+    // Defaults to the operator account — same account signs payouts/refunds.
+    hederaAccountId: process.env.PLATFORM_HEDERA_ACCOUNT_ID || process.env.HEDERA_OPERATOR_ID || '',
+    // Commission taken from each approved submission (0.10 = 10%).
+    commissionRate: parseFloat(process.env.PLATFORM_COMMISSION_RATE || '0.10'),
   },
 
   gmail: {

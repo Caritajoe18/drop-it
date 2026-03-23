@@ -397,7 +397,7 @@ GET /api/payments/balance   ← authenticated (USDC balance from Hedera)
 | ------------------ | --------------------------------- |
 | `npm run dev`      | Start with hot reload             |
 | `npm run build`    | Compile TypeScript to `dist/`     |
-| `npm start`        | Run compiled `dist/server.js`     |
+| `npm start`        | Run compiled `dist/index.js`     |
 | `npm run lint`     | Lint source files                 |
 | `npm test`         | Run tests                         |
 | `npm run db:migrate` | Run Sequelize migrations        |
@@ -423,7 +423,7 @@ Backend and frontend are **deployed independently**. They share this repository 
 cd apps/backend
 npm install --production
 npm run build
-NODE_ENV=production node dist/server.js
+NODE_ENV=production node dist/index.js
 ```
 
 - Output: `apps/backend/dist/`

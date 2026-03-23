@@ -1,4 +1,8 @@
-const BASE_URL = '/drop';
+// In production (Vercel) set VITE_API_URL=https://your-backend.com
+// In local dev the Vite proxy rewrites /drop/* → localhost:5000, so the empty string is fine.
+const BASE_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/drop`
+  : '/drop';
 
 class ApiError extends Error {
   status: number;
