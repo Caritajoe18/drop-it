@@ -21,10 +21,12 @@ class TaskService {
       description: string;
       category: string;
       rewardAmount: number;
+      currency?: 'USDC' | 'HBAR';
       maxSubmissions?: number;
       deadline?: Date;
     },
   ) {
+    const currency = data.currency ?? 'USDC';
     const maxSubmissions = data.maxSubmissions || 1;
     const escrowAmount = parseFloat(
       (Number(data.rewardAmount) * maxSubmissions).toFixed(6),
@@ -35,6 +37,7 @@ class TaskService {
     // Create the task — status is 'open' only after escrow is confirmed
     const task = await Task.create({
       ...data,
+      currency,
       maxSubmissions,
       requesterId,
       escrowAmount,
@@ -48,6 +51,7 @@ class TaskService {
       fromUserId: requesterId,
       toUserId: null, // funds go to platform escrow
       amount: escrowAmount,
+      currency,
       type: 'escrow_deposit',
       status: 'pending',
     });
@@ -55,7 +59,8 @@ class TaskService {
     return {
       task,
       escrowAmount,
-      // Where the requester must send the USDC deposit
+      currency,
+      // Where the requester must send the deposit
       platformHederaAccountId: env.platform.hederaAccountId,
       requesterHederaAccountId: requester?.hederaAccountId ?? null,
     };
@@ -75,18 +80,28 @@ class TaskService {
 
     // Verify on-chain (best-effort — warnings only in dev)
     const requester = await User.findByPk(requesterId);
-    if (requester?.hederaAccountId && env.hedera.usdcTokenId) {
-      const valid = await hederaService.verifyDeposit(
-        hederaTxId,
-        requester.hederaAccountId,
-        Number(task.escrowAmount),
-      );
-      if (!valid) {
-        throw new BadRequestError(
-          'Could not verify the Hedera transaction. ' +
-            `Please ensure you sent at least ${task.escrowAmount} USDC ` +
-            `to ${env.platform.hederaAccountId} and resubmit the correct transaction ID.`,
-        );
+    if (requester?.hederaAccountId) {
+      const isHbar = task.currency === 'HBAR';
+      const canVerify = isHbar ? hederaService.hbarConfigured : hederaService.usdcConfigured;
+      if (canVerify) {
+        const valid = isHbar
+          ? await hederaService.verifyHbarDeposit(
+              hederaTxId,
+              requester.hederaAccountId,
+              Number(task.escrowAmount),
+            )
+          : await hederaService.verifyDeposit(
+              hederaTxId,
+              requester.hederaAccountId,
+              Number(task.escrowAmount),
+            );
+        if (!valid) {
+          throw new BadRequestError(
+            'Could not verify the Hedera transaction. ' +
+              `Please ensure you sent at least ${task.escrowAmount} ${task.currency} ` +
+              `to ${env.platform.hederaAccountId} and resubmit the correct transaction ID.`,
+          );
+        }
       }
     }
 
@@ -204,6 +219,7 @@ class TaskService {
           toUserId: submission.workerId,
           amount: workerAmount,
           commissionAmount,
+          currency: task.currency,
           type: 'worker_payout',
           status: 'pending',
         },
@@ -228,19 +244,27 @@ class TaskService {
       const worker = await User.findByPk(submission.workerId, { transaction: t });
       if (worker?.hederaAccountId) {
         try {
-          const { txId } = await hederaService.releaseToWorker(
-            worker.hederaAccountId,
-            rewardAmount,
-            commissionRate,
-            `drops payout: submission ${submissionId}`,
-          );
+          const isHbar = task.currency === 'HBAR';
+          const { txId } = isHbar
+            ? await hederaService.releaseHbarToWorker(
+                worker.hederaAccountId,
+                rewardAmount,
+                commissionRate,
+                `drops payout: submission ${submissionId}`,
+              )
+            : await hederaService.releaseToWorker(
+                worker.hederaAccountId,
+                rewardAmount,
+                commissionRate,
+                `drops payout: submission ${submissionId}`,
+              );
           await payment.update(
             { status: 'completed', hederaTransactionId: txId },
             { transaction: t },
           );
           logger.info(
-            `Payout complete: ${txId} — ${workerAmount} USDC to ${worker.hederaAccountId} ` +
-              `(commission ${commissionAmount} USDC retained)`,
+            `Payout complete: ${txId} — ${workerAmount} ${task.currency} to ${worker.hederaAccountId} ` +
+              `(commission ${commissionAmount} ${task.currency} retained)`,
           );
         } catch (err) {
           logger.error('On-chain payout failed — recorded for retry', err);
@@ -330,16 +354,23 @@ class TaskService {
       const requester = await User.findByPk(requesterId, { transaction: t });
       if (requester?.hederaAccountId) {
         try {
-          const txId = await hederaService.sendFromPlatform(
-            requester.hederaAccountId,
-            refundAmount,
-            `drops escrow refund: task ${taskId}`,
-          );
+          const isHbar = task.currency === 'HBAR';
+          const txId = isHbar
+            ? await hederaService.sendHbarFromPlatform(
+                requester.hederaAccountId,
+                refundAmount,
+                `drops escrow refund: task ${taskId}`,
+              )
+            : await hederaService.sendFromPlatform(
+                requester.hederaAccountId,
+                refundAmount,
+                `drops escrow refund: task ${taskId}`,
+              );
           await payment.update(
             { status: 'completed', hederaTransactionId: txId },
             { transaction: t },
           );
-          logger.info(`Refund ${txId}: ${refundAmount} USDC → ${requester.hederaAccountId}`);
+          logger.info(`Refund ${txId}: ${refundAmount} ${task.currency} → ${requester.hederaAccountId}`);
         } catch (err) {
           logger.error('Escrow refund on-chain failed — recorded for retry', err);
         }

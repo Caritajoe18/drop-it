@@ -4,6 +4,7 @@ import {
   PrivateKey,
   TransferTransaction,
   TokenId,
+  Hbar,
   Status,
 } from '@hashgraph/sdk';
 import { env } from '../config/env';
@@ -16,14 +17,21 @@ class HederaService {
   private operatorId!: AccountId;
   private operatorKey!: PrivateKey;
   private usdcTokenId!: TokenId;
-  private readonly configured: boolean;
+
+  /** True when operator credentials + USDC token are available. */
+  readonly usdcConfigured: boolean;
+  /** True when at minimum operator credentials are available (needed for HBAR). */
+  readonly hbarConfigured: boolean;
 
   constructor() {
-    this.configured =
+    this.usdcConfigured =
       !!(env.hedera.operatorId && env.hedera.operatorKey && env.hedera.usdcTokenId);
+    this.hbarConfigured = !!(env.hedera.operatorId && env.hedera.operatorKey);
 
-    if (!this.configured) {
+    if (!this.hbarConfigured) {
       logger.warn('Hedera credentials not configured — payment features disabled');
+    } else if (!this.usdcConfigured) {
+      logger.warn('Hedera USDC token not configured — USDC payments disabled');
     }
 
     this.client =
@@ -49,7 +57,7 @@ class HederaService {
     amount: number,
     memo: string,
   ): Promise<string> {
-    if (!this.configured) {
+    if (!this.usdcConfigured) {
       throw new AppError('Hedera not configured', 500);
     }
     try {
@@ -142,7 +150,7 @@ class HederaService {
    * Query the USDC token balance for a Hedera account.
    */
   async getUsdcBalance(accountId: string): Promise<number> {
-    if (!this.configured) return 0;
+    if (!this.usdcConfigured) return 0;
     try {
       const { AccountBalanceQuery } = await import('@hashgraph/sdk');
       const balance = await new AccountBalanceQuery()
@@ -154,6 +162,95 @@ class HederaService {
     } catch (error) {
       logger.error(`Failed to fetch USDC balance for ${accountId}`, error);
       throw new AppError('Unable to fetch balance', 500);
+    }
+  }
+
+  /**
+   * Send HBAR **from the platform operator account** to any Hedera account.
+   * `amountHbar` is in whole HBAR (e.g. 5.5 = 5.5 ℏ).
+   */
+  async sendHbarFromPlatform(
+    toAccountId: string,
+    amountHbar: number,
+    memo: string,
+  ): Promise<string> {
+    if (!this.hbarConfigured) {
+      throw new AppError('Hedera not configured', 500);
+    }
+    try {
+      const tinybar = Math.round(amountHbar * 1e8);
+      const transaction = new TransferTransaction()
+        .addHbarTransfer(this.operatorId, Hbar.fromTinybars(-tinybar))
+        .addHbarTransfer(AccountId.fromString(toAccountId), Hbar.fromTinybars(tinybar))
+        .setTransactionMemo(memo)
+        .freezeWith(this.client);
+
+      const signedTx = await transaction.sign(this.operatorKey);
+      const response = await signedTx.execute(this.client);
+      const receipt = await response.getReceipt(this.client);
+
+      if (receipt.status !== Status.Success) {
+        throw new AppError(`Hedera HBAR transfer failed: ${receipt.status}`, 500);
+      }
+
+      const txId = response.transactionId.toString();
+      logger.info(`Platform → ${toAccountId}: ${amountHbar} HBAR — ${txId} — ${memo}`);
+      return txId;
+    } catch (error) {
+      logger.error('sendHbarFromPlatform failed', error);
+      throw error instanceof AppError
+        ? error
+        : new AppError('Platform HBAR payment failed. Please try again.', 500);
+    }
+  }
+
+  /**
+   * Release HBAR escrow to a worker minus the platform commission.
+   */
+  async releaseHbarToWorker(
+    workerHederaId: string,
+    rewardAmountHbar: number,
+    commissionRate: number,
+    memo: string,
+  ): Promise<{ txId: string; workerAmount: number; commissionAmount: number }> {
+    const commissionAmount = parseFloat((rewardAmountHbar * commissionRate).toFixed(8));
+    const workerAmount = parseFloat((rewardAmountHbar - commissionAmount).toFixed(8));
+    const txId = await this.sendHbarFromPlatform(workerHederaId, workerAmount, memo);
+    return { txId, workerAmount, commissionAmount };
+  }
+
+  /**
+   * Verify an HBAR transfer via Mirror Node.
+   * Returns true if the tx shows a debit of at least `minAmountHbar` HBAR from `fromAccountId`.
+   */
+  async verifyHbarDeposit(
+    txId: string,
+    fromAccountId: string,
+    minAmountHbar: number,
+  ): Promise<boolean> {
+    const network = env.hedera.network === 'mainnet' ? 'mainnet-public' : 'testnet';
+    const normalised = txId.replace('@', '-');
+    const url = `https://${network}.mirrornode.hedera.com/api/v1/transactions/${encodeURIComponent(normalised)}`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        logger.warn(`Mirror node returned ${res.status} for tx ${txId}`);
+        return false;
+      }
+      const body = (await res.json()) as any;
+      // Mirror Node uses `transfers` for HBAR (amounts in tinybar)
+      const hbarTransfers: any[] = body.transactions?.[0]?.transfers ?? [];
+      const minTinybar = Math.round(minAmountHbar * 1e8);
+      const debit = hbarTransfers.find(
+        (t) =>
+          t.account === fromAccountId &&
+          t.amount < 0 &&
+          Math.abs(t.amount) >= minTinybar,
+      );
+      return !!debit;
+    } catch (err) {
+      logger.warn('Mirror node HBAR verification failed (non-fatal)', err);
+      return false;
     }
   }
 

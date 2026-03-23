@@ -6,6 +6,7 @@ export const createTaskSchema = z.object({
     description: z.string().min(10),
     category: z.string().min(2).max(50),
     rewardAmount: z.number().positive(),
+    currency: z.enum(['USDC', 'HBAR']).optional(),
     maxSubmissions: z.number().int().positive().optional(),
     deadline: z.string().datetime().optional(),
   }),

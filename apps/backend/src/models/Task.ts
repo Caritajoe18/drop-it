@@ -3,6 +3,7 @@ import sequelize from '../config/database';
 
 export type TaskStatus = 'open' | 'in_progress' | 'under_review' | 'completed' | 'cancelled';
 export type TaskFundingStatus = 'pending_funding' | 'funded' | 'depleted' | 'refunded';
+export type TaskCurrency = 'USDC' | 'HBAR';
 
 export interface TaskAttributes {
   id: string;
@@ -10,6 +11,7 @@ export interface TaskAttributes {
   description: string;
   category: string;
   rewardAmount: number;
+  currency: TaskCurrency;
   maxSubmissions: number;
   currentSubmissions: number;
   status: TaskStatus;
@@ -25,6 +27,7 @@ export interface TaskAttributes {
 type TaskCreationAttributes = Optional<
   TaskAttributes,
   | 'id'
+  | 'currency'
   | 'currentSubmissions'
   | 'status'
   | 'fundingStatus'
@@ -41,6 +44,7 @@ class Task extends Model<TaskAttributes, TaskCreationAttributes> implements Task
   declare description: string;
   declare category: string;
   declare rewardAmount: number;
+  declare currency: TaskCurrency;
   declare maxSubmissions: number;
   declare currentSubmissions: number;
   declare status: TaskStatus;
@@ -76,6 +80,11 @@ Task.init(
       type: DataTypes.DECIMAL(18, 6),
       allowNull: false,
       validate: { min: 0.000001 },
+    },
+    currency: {
+      type: DataTypes.ENUM('USDC', 'HBAR'),
+      allowNull: false,
+      defaultValue: 'USDC',
     },
     maxSubmissions: {
       type: DataTypes.INTEGER,
