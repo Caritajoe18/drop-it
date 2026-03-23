@@ -33,6 +33,8 @@ class TaskService {
     );
 
     const requester = await User.findByPk(requesterId);
+    const adminUser = await User.findOne({ where: { role: 'admin' } });
+    if (!adminUser) throw new Error('No admin user found — cannot create escrow payment');
 
     // Create the task — status is 'open' only after escrow is confirmed
     const task = await Task.create({
@@ -49,7 +51,7 @@ class TaskService {
     await Payment.create({
       taskId: task.id,
       fromUserId: requesterId,
-      toUserId: null, // funds go to platform escrow
+      toUserId: adminUser.id, // funds go to the platform admin escrow account
       amount: escrowAmount,
       currency,
       type: 'escrow_deposit',
@@ -210,12 +212,14 @@ class TaskService {
 
       await submission.update({ status: 'approved' }, { transaction: t });
 
+      const adminUser = await User.findOne({ where: { role: 'admin' }, transaction: t });
+
       // Create the payout payment record (net amount to worker)
       const payment = await Payment.create(
         {
           taskId: task.id,
           submissionId: submission.id,
-          fromUserId: null, // platform operator is sender
+          fromUserId: adminUser?.id ?? requesterId, // platform admin is payout sender
           toUserId: submission.workerId,
           amount: workerAmount,
           commissionAmount,
@@ -338,10 +342,12 @@ class TaskService {
         return { task, refundAmount: 0, payment: null };
       }
 
+      const adminUser = await User.findOne({ where: { role: 'admin' }, transaction: t });
+
       const payment = await Payment.create(
         {
           taskId: task.id,
-          fromUserId: null,
+          fromUserId: adminUser?.id ?? null, // platform admin is refund sender
           toUserId: requesterId,
           amount: refundAmount,
           type: 'escrow_refund',
