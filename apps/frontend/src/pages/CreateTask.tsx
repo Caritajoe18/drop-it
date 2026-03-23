@@ -208,7 +208,7 @@ export default function CreateTask() {
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', textAlign: 'right' }}>
                     <p>{form.rewardAmount || '0'} USDC × {form.maxSubmissions} submissions</p>
-                    <p style={{ marginTop: '0.15rem' }}>10% platform commission applies per payout</p>
+                    <p style={{ marginTop: '0.15rem' }}>5% platform commission applies per payout</p>
                   </div>
                 </div>
               )}
