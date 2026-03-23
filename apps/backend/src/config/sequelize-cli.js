@@ -1,5 +1,12 @@
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
+// Render (and most cloud hosts) expose DATABASE_URL — parse it if present
+const url = process.env.DATABASE_URL;
+
+function fromUrl(dialect) {
+  return { use_env_variable: 'DATABASE_URL', dialect, logging: false };
+}
+
 module.exports = {
   development: {
     username: process.env.DB_USER || 'postgres',
@@ -17,19 +24,16 @@ module.exports = {
     port: parseInt(process.env.DB_PORT || '5432', 10),
     dialect: 'postgres',
   },
-  production: {
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT || '5432', 10),
-    dialect: 'postgres',
-    logging: false,
-    pool: {
-      max: 20,
-      min: 5,
-      acquire: 30000,
-      idle: 10000,
-    },
-  },
+  production: url
+    ? fromUrl('postgres')
+    : {
+        username: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME,
+        host: process.env.DB_HOST,
+        port: parseInt(process.env.DB_PORT || '5432', 10),
+        dialect: 'postgres',
+        logging: false,
+        pool: { max: 20, min: 5, acquire: 30000, idle: 10000 },
+      },
 };
