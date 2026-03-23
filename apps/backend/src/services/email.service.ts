@@ -2,13 +2,19 @@ import nodemailer from 'nodemailer';
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
+const transportOptions = {
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  family: 4, // force IPv4 — Render free tier has no IPv6 outbound
   auth: {
     user: env.gmail.user,
     pass: env.gmail.appPassword,
   },
-});
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const transporter = nodemailer.createTransport(transportOptions as any);
 
 export async function sendVerificationEmail(to: string, verificationUrl: string, name?: string  ) {
   const mailOptions = {
